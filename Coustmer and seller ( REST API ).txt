@@ -1,0 +1,108 @@
+const express = require('express');
+const data = require('./data');
+
+
+const app = express();
+
+//Search for products
+
+app.use('/', (req, res, next) => {
+    const filters = req.query;
+    const filteredProducts = data.filter(product => {
+        let isValid = true;
+        for (key in filters) {
+            console.log(key, product[key], filters[key]);
+            isValid = isValid && product[key] == filters[key];
+        }
+        return isValid;
+    });
+    res.send(filteredProducts);
+});
+
+//get all the products
+
+app.use('/getallproducts', (req, res, next) => {
+    Product.find({}).then(data => {
+        res.send(data);
+    }).catch(err => {
+        res.status(500).send({
+            message: err.message || "Error occurred while retrieving products."
+        });
+    })
+},
+
+    //Add a new product
+
+    app.use('/products', (req, res, next) => {
+        if (!req.body.name) {
+            res.status(400).send({
+                message: "Product name can not be empty!"
+            });
+            return;
+        }
+        const product = new Product({
+            name: req.body.name,
+            description: req.body.description,
+            price: req.body.price
+        })
+        product.save().then(data => {
+            res.send(data);
+        }).catch(err => {
+            res.status(500).send({
+                message: err.message || "Error occurred while creating the Product."
+            });
+        })
+    },
+        // update Product by id
+        app.use('/api/products/:id', (req, res, next) => {
+            if (!req.body) {
+                return res.status(400).send({
+                    message: "Data to update can not be empty!"
+                });
+            }
+            const id = req.params.id;
+            Product.findByIdAndUpdate(id, req.body, {
+                useFindAndModify: false
+            })
+                .then(data => {
+                    if (!data) {
+                        res.status(404).send({
+                            message: `Failed to update Product with id=${id}.`
+                        });
+                    } else res.send({
+                        message: "Product was updated successfully."
+                    });
+                })
+                .catch(err => {
+                    res.status(500).send({
+                        message: "Error occured while updating Product with id=" + id
+                    });
+                });
+        },
+
+            // DELETE delete Product by id
+            app.use('/api/products/:id', (req, res, next) => {
+                const id = req.params.id;
+                Product.deleteOne({
+                    _id: id
+                })
+                    .then(data => {
+                        if (!data) {
+                            res.status(404).send({
+                                message: `Failed to delete Product with id=${id}.`
+                            });
+                        } else res.send({
+                            message: "Product was deleted successfully."
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).send({
+                            message: "Error occured while deleting Product with id=" + id
+                        });
+                    });
+            },
+
+
+                app.listen(5000, () => {
+                    console.log('Server started!');
+                })
